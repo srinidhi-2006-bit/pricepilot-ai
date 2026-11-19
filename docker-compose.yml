@@ -1,0 +1,18 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment: { POSTGRES_USER: pricepilot, POSTGRES_PASSWORD: pricepilot, POSTGRES_DB: pricepilot }
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U pricepilot"], interval: 5s, retries: 10 }
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql://pricepilot:pricepilot@db:5432/pricepilot
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+    depends_on: { db: { condition: service_healthy } }
+    ports: ["8000:8000"]
+  frontend:
+    build: ./frontend
+    depends_on: [backend]
+    ports: ["3000:80"]
+volumes: { pgdata: {} }
